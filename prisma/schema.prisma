@@ -1,6 +1,4 @@
-// ============================================================================
 // Social Feed API — Prisma Schema
-// --------------------------------------
 
 generator client {
   provider = "prisma-client-js"
@@ -39,9 +37,12 @@ model User {
   role      Role    @default(USER)
   isActive  Boolean @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  posts        Post[]
+  comments     Comment[]
+  postLikes    PostLike[]
+  commentLikes CommentLike[]
 
   @@index([createdAt])
   @@map("users")
@@ -59,12 +60,68 @@ model Post {
   authorId Int
   author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  comments Comment[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  postLikes PostLike[]
 
   // Feed queries filter by visibility and sort by createdAt DESC — composite
   // index keeps that query an index scan instead of a filesort at scale.
   @@index([visibility, createdAt])
   @@index([authorId])
   @@map("posts")
+}
+
+model Comment {
+  id      Int    @id @default(autoincrement())
+  content String @db.VarChar(1000)
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId Int?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  commentLikes CommentLike[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model PostLike {
+  id     Int @id @default(autoincrement())
+  postId Int
+  userId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId]) // prevent duplicate likes by the same user on the same post
+  @@index([postId])
+  @@map("post_likes")
+}
+
+model CommentLike {
+  id        Int @id @default(autoincrement())
+  commentId Int
+  userId    Int
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId]) // prevent duplicate likes by the same user on the same comment
+  @@index([commentId])
+  @@map("comment_likes")
 }

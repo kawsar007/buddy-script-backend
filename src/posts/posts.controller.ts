@@ -4,11 +4,11 @@ import {
   Delete,
   Get,
   HttpCode,
+  Post as HttpPost,
   HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
-  Post as HttpPost,
   Query,
   UploadedFile,
   UseInterceptors,
@@ -17,28 +17,28 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiCreatedResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { PostsService } from './posts.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { PostResponseDto } from './dto/post-response.dto';
-import { PaginatedPostsResponseDto } from './dto/paginated-posts-response.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { imageMulterOptions } from 'src/common/utils/multer-image.config';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { imageMulterOptions } from '../common/utils/multer-image.config';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { PaginatedPostsResponseDto } from './dto/paginated-posts-response.dto';
+import { PostResponseDto } from './dto/post-response.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { PostsService } from './posts.service';
 
 @ApiTags('Posts')
 @ApiBearerAuth('access-token')
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(private readonly postsService: PostsService) { }
 
   @HttpPost()
   @HttpCode(HttpStatus.CREATED)
@@ -57,11 +57,6 @@ export class PostsController {
     return this.postsService.create(userId, dto, file);
   }
 
-  // NOTE: requires auth (no @Public()) rather than allowing anonymous
-  // access — the feed needs to know the caller's identity to decide which
-  // PRIVATE posts (their own) belong alongside the PUBLIC ones. An
-  // "optional auth" guard could relax this later if an anonymous/public
-  // feed view becomes a requirement.
   @Get()
   @ApiOperation({ summary: 'List posts — newest first, paginated' })
   @ApiOkResponse({

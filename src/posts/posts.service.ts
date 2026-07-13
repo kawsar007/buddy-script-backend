@@ -3,20 +3,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Post, PostVisibility, Prisma } from '@prisma/client';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
-import { Post, PostVisibility, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
-import { PostResponseDto } from './dto/post-response.dto';
-import { PublicUserResponseDto } from '../users/dto/public-user-response.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { buildImageUrl } from '../common/utils/multer-image.config';
 import {
   buildPaginationMeta,
   PaginationMeta,
 } from '../common/utils/api-response.util';
+import { buildImageUrl } from '../common/utils/multer-image.config';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicUserResponseDto } from '../users/dto/public-user-response.dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { PostResponseDto } from './dto/post-response.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 type PostWithAuthor = Post & {
   author: {
@@ -29,9 +29,6 @@ type PostWithAuthor = Post & {
   };
 };
 
-// Reused on every query that returns a post — keeps the author payload at
-// the public-safe field set (no email) directly at the DB layer, rather
-// than fetching everything and filtering it out in application code.
 const AUTHOR_SELECT = {
   select: {
     id: true,
@@ -45,7 +42,7 @@ const AUTHOR_SELECT = {
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(
     authorId: number,
@@ -65,11 +62,6 @@ export class PostsService {
     return this.toResponse(post);
   }
 
-  /**
-   * Newest-first, paginated feed. Returns every PUBLIC post plus the
-   * caller's own PRIVATE posts — never another user's private posts.
-   * (GET /posts requires auth; see PostsController for the rationale.)
-   */
   async findAll(
     currentUserId: number,
     query: PaginationQueryDto,
@@ -98,11 +90,28 @@ export class PostsService {
     };
   }
 
-  /**
-   * Single-post lookup. A private post owned by someone else returns 404
-   * (not 403) — same "don't confirm existence" pattern used for public user
-   * profiles, so probing IDs can't reveal that a private post exists.
-   */
+  // Confirms a post exists and is visible to the caller (PUBLIC, or PRIVATE)
+
+  async assertPostAccessible(
+    currentUserId: number,
+    postId: number,
+  ): Promise<{ id: number; authorId: number }> {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, authorId: true, visibility: true },
+    });
+
+    const isOwner = post?.authorId === currentUserId;
+    const isVisible =
+      post && (post.visibility === PostVisibility.PUBLIC || isOwner);
+
+    if (!post || !isVisible) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return { id: post.id, authorId: post.authorId };
+  }
+
   async findOne(
     currentUserId: number,
     postId: number,
@@ -150,9 +159,9 @@ export class PostsService {
     }
   }
 
-  // --------------------------------------------------------------------
+  // --------------------
   // Internal helpers
-  // --------------------------------------------------------------------
+  // --------------------
 
   private async findVisiblePostOrThrow(
     currentUserId: number,
@@ -196,14 +205,14 @@ export class PostsService {
     return post;
   }
 
-  /** Best-effort disk cleanup — a stale file is a nuisance, not a data-integrity issue. */
+  /** Best-effort disk cleanup - a stale file is a nuisance, not a data-integrity issue. */
   private async deleteImageFile(imageUrl: string): Promise<void> {
     try {
       const relativePath = imageUrl.replace(/^\/uploads\//, '');
       const uploadRoot = process.env.UPLOAD_DEST ?? './uploads';
       await unlink(join(process.cwd(), uploadRoot, relativePath));
     } catch {
-      // File already gone or inaccessible — nothing more to do.
+      // File already gone
     }
   }
 
