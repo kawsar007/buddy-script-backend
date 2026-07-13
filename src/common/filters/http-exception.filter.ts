@@ -6,15 +6,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { Request, Response } from 'express';
 import { ApiErrorResponse } from '../utils/api-response.util';
-
-/**
- * Single point of truth for error shape across the whole API.
- * Catches everything (HttpException, Prisma errors, and unknown throws) so
- * clients never see a raw stack trace or an inconsistent payload shape.
- */
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);

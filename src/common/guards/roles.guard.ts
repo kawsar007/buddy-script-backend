@@ -1,17 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
-import { ROLES_KEY } from '../decorators/roles.decorator';
 import { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { ROLES_KEY } from '../decorators/roles.decorator';
 
-/**
- * Not registered globally — apply per-controller/route with
- * @UseGuards(RolesGuard) @Roles(Role.ADMIN) where needed.
- * Must run after JwtAuthGuard has populated request.user.
- */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [

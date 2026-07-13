@@ -33,12 +33,8 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     PrismaModule,
     AuthModule,
-    // UsersModule, PostsModule, CommentsModule, LikesModule, UploadsModule
-    // will be added here in subsequent delivery phases.
   ],
   providers: [
-    // Order matters: guards run in registration order. JwtAuthGuard first so
-    // ThrottlerGuard's per-user tracking (if extended later) sees req.user.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

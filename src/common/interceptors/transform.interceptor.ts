@@ -7,12 +7,6 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiSuccessResponse } from '../utils/api-response.util';
-
-/**
- * Wraps every controller return value in { success, statusCode, message,
- * data, timestamp }. Controllers can return either a raw payload (wrapped
- * as-is) or { message, data, meta } to customize the message/pagination meta.
- */
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,

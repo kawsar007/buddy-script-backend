@@ -9,23 +9,21 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
-import { Public } from '../common/decorators/public.decorator';
+import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  // Tighter limit than the global default — registration is a common
-  // target for automated abuse / email-bombing.
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiCreatedResponse({
@@ -41,7 +39,6 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  // Brute-force mitigation on the login endpoint specifically.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Authenticate with email and password' })
   @ApiOkResponse({ description: 'Login successful', type: AuthResponseDto })
