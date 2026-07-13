@@ -184,6 +184,31 @@ export class CommentsService {
     await this.prisma.comment.delete({ where: { id: existing.id } });
   }
 
+  /**
+ * Confirms a comment exists and its parent post is visible to the caller.
+ * Used by the Likes module so a comment (or reply — same table) can't be
+ * liked, unliked, or have its likers listed without also being visible —
+ * same defense-in-depth reasoning as createReply()'s post-visibility
+ * re-check above.
+ */
+  async assertCommentAccessible(
+    userId: number,
+    commentId: number,
+  ): Promise<{ id: number; postId: number }> {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, postId: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    await this.postsService.assertPostAccessible(userId, comment.postId);
+
+    return comment;
+  }
+
   // --------------------------------------------------------------------
   // Internal helpers
   // --------------------------------------------------------------------

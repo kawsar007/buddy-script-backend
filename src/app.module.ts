@@ -10,6 +10,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
+import { LikesModule } from './likes/likes.module';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -39,6 +40,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     PostsModule,
     CommentsModule,
+    LikesModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
