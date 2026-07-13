@@ -1,0 +1,47 @@
+// ============================================================================
+// Social Feed API — Prisma Schema
+// --------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------
+// Enums
+// -----------------------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PostVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+// -----------------------
+// User
+// -----------------------
+model User {
+  id        Int     @id @default(autoincrement())
+  firstName String  @db.VarChar(50)
+  lastName  String  @db.VarChar(50)
+  email     String  @unique @db.VarChar(191)
+  password  String  @db.VarChar(255) // bcrypt hash — never returned in API responses
+  avatarUrl String? @db.VarChar(512)
+  bio       String? @db.VarChar(280)
+  role      Role    @default(USER)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("users")
+}
