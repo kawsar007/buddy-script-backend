@@ -41,7 +41,30 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  posts     Post[]
 
   @@index([createdAt])
   @@map("users")
+}
+
+// -----------------
+// Post
+// ----------------
+model Post {
+  id         Int            @id @default(autoincrement())
+  content    String         @db.Text
+  imageUrl   String?        @db.VarChar(512)
+  visibility PostVisibility @default(PUBLIC)
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Feed queries filter by visibility and sort by createdAt DESC — composite
+  // index keeps that query an index scan instead of a filesort at scale.
+  @@index([visibility, createdAt])
+  @@index([authorId])
+  @@map("posts")
 }

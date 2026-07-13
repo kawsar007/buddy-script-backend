@@ -1,12 +1,15 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { mkdirSync } from 'fs';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log'],
   });
 
@@ -14,6 +17,11 @@ async function bootstrap() {
   const port = configService.get<number>('port')!;
   const apiPrefix = configService.get<string>('apiPrefix')!;
   const corsOrigin = configService.get<string>('cors.origin')!;
+  const uploadDest = configService.get<string>('upload.dest')!;
+
+  for (const subdir of ['posts', 'avatars']) {
+    mkdirSync(join(process.cwd(), uploadDest, subdir), { recursive: true });
+  }
 
   app.use(helmet());
 
@@ -24,6 +32,10 @@ async function bootstrap() {
 
   // versioning is baked into API_PREFIX (default "api/v1")
   app.setGlobalPrefix(apiPrefix);
+
+  app.useStaticAssets(join(process.cwd(), uploadDest), {
+    prefix: '/uploads',
+  });
 
   // Global validation
   app.useGlobalPipes(
