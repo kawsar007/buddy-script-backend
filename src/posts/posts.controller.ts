@@ -25,6 +25,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+// import { imageMulterOptions } from 'src/common/utils/multer-image.config';
 import { imageMulterOptions } from 'src/common/utils/multer-image.config';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
@@ -43,7 +44,8 @@ export class PostsController {
   @HttpPost()
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('image', imageMulterOptions('posts')))
+  // cast to any to satisfy multer / NestJS typing differences for fileFilter signature
+  @UseInterceptors(FileInterceptor('image', imageMulterOptions('posts') as any))
   @ApiOperation({
     summary: 'Create a post, optionally with an image attachment',
   })
@@ -85,7 +87,8 @@ export class PostsController {
 
   @Patch(':id')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('image', imageMulterOptions('posts')))
+  // @UseInterceptors(FileInterceptor('image', imageMulterOptions('posts')))
+  @UseInterceptors(FileInterceptor('image', imageMulterOptions('posts') as any))
   @ApiOperation({
     summary: 'Update your own post (content, visibility, or image)',
   })

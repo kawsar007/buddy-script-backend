@@ -23,7 +23,12 @@ async function bootstrap() {
     mkdirSync(join(process.cwd(), uploadDest, subdir), { recursive: true });
   }
 
-  app.use(helmet());
+  // app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   app.enableCors({
     origin: corsOrigin === '*' ? true : corsOrigin.split(','),
